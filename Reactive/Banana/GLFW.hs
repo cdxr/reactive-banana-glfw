@@ -19,11 +19,16 @@ import Reactive.Banana.Frameworks as R
 
 data EventSource t = EventSource
     { windowRefresh :: Event t ()
+    , windowClose   :: Event t ()
+    , windowFocus   :: Event t FocusState
+    , windowIconify :: Event t IconifyState
+    , windowPos     :: Event t (Int, Int)
     , windowSize    :: Event t (Int, Int)
     , key           :: Event t (Key, Int, KeyState, ModifierKeys)
     , char          :: Event t Char
     , mouseButton   :: Event t (MouseButton, MouseButtonState, ModifierKeys)
     , cursorPos     :: Event t (Double, Double)
+    , cursorEnter   :: Event t CursorState
     }
 
 
@@ -42,6 +47,22 @@ windowEventSource w = do
     windowRefresh <- liftIO $
         handleCallback (GLFW.setWindowRefreshCallback w) $
             \fire _ -> fire ()
+
+    windowClose <- liftIO $
+        handleCallback (GLFW.setWindowCloseCallback w) $
+            \fire _ -> fire ()
+
+    windowFocus <- liftIO $
+        handleCallback (GLFW.setWindowFocusCallback w) $
+            \fire _ st -> fire st
+
+    windowIconify <- liftIO $
+        handleCallback (GLFW.setWindowIconifyCallback w) $
+            \fire _ st -> fire st
+
+    windowPos <- liftIO $
+        handleCallback (GLFW.setWindowPosCallback w) $
+            \fire _ x y -> fire (x,y)
 
     windowSize <- liftIO $
         handleCallback (GLFW.setWindowSizeCallback w) $
@@ -63,10 +84,20 @@ windowEventSource w = do
         handleCallback (GLFW.setCursorPosCallback w) $
             \fire _ x y -> fire (x, y)
 
+    cursorEnter <- liftIO $
+        handleCallback (GLFW.setCursorEnterCallback w) $
+            \fire _ st -> fire st
+
+
     EventSource
         <$> fromAddHandler windowRefresh
+        <*> fromAddHandler windowClose
+        <*> fromAddHandler windowFocus
+        <*> fromAddHandler windowIconify
+        <*> fromAddHandler windowPos
         <*> fromAddHandler windowSize
         <*> fromAddHandler key
         <*> fromAddHandler char
         <*> fromAddHandler mouseButton
         <*> fromAddHandler cursorPos
+        <*> fromAddHandler cursorEnter
