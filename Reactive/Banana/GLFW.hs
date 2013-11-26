@@ -13,6 +13,10 @@ import Reactive.Banana as R
 import Reactive.Banana.Frameworks as R
 
 
+-- TODO  add support for error and monitor callbacks
+--       ^ are these even useful?
+
+
 data EventSource t = EventSource
     { windowRefresh :: Event t ()
     , windowSize    :: Event t (Int, Int)
