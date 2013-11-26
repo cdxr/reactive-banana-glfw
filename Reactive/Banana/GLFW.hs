@@ -7,7 +7,6 @@ module Reactive.Banana.GLFW
 )
 where
 
-import Control.Applicative
 import Graphics.UI.GLFW as GLFW
 import Reactive.Banana as R
 import Reactive.Banana.Frameworks as R
@@ -33,71 +32,61 @@ data EventSource t = EventSource
 
 
 handleCallback
-    :: (Maybe cb -> IO ())
+    :: (Frameworks t)
+    => (Maybe cb -> IO ())
     -> ((a -> IO ()) -> cb)
-    -> IO (AddHandler a)
+    -> Moment t (Event t a)
 handleCallback cb f = do
-    (ah, fire) <- newAddHandler
-    cb $ Just $ f fire
+    (ah, fire) <- newEvent
+    liftIO $ cb $ Just $ f fire
     return ah
 
 
 windowEventSource :: forall t. Frameworks t => GLFW.Window -> Moment t (EventSource t)
 windowEventSource w = do
-    windowRefresh <- liftIO $
-        handleCallback (GLFW.setWindowRefreshCallback w) $
+    windowRefresh <- handleCallback (GLFW.setWindowRefreshCallback w) $
             \fire _ -> fire ()
 
-    windowClose <- liftIO $
-        handleCallback (GLFW.setWindowCloseCallback w) $
+    windowClose <- handleCallback (GLFW.setWindowCloseCallback w) $
             \fire _ -> fire ()
 
-    windowFocus <- liftIO $
-        handleCallback (GLFW.setWindowFocusCallback w) $
+    windowFocus <- handleCallback (GLFW.setWindowFocusCallback w) $
             \fire _ st -> fire st
 
-    windowIconify <- liftIO $
-        handleCallback (GLFW.setWindowIconifyCallback w) $
+    windowIconify <- handleCallback (GLFW.setWindowIconifyCallback w) $
             \fire _ st -> fire st
 
-    windowPos <- liftIO $
-        handleCallback (GLFW.setWindowPosCallback w) $
+    windowPos <- handleCallback (GLFW.setWindowPosCallback w) $
             \fire _ x y -> fire (x,y)
 
-    windowSize <- liftIO $
-        handleCallback (GLFW.setWindowSizeCallback w) $
+    windowSize <- handleCallback (GLFW.setWindowSizeCallback w) $
             \fire _ x y -> fire (x,y)
 
-    key <- liftIO $
-        handleCallback (GLFW.setKeyCallback w) $
+    key <- handleCallback (GLFW.setKeyCallback w) $
             \fire _ key i st mods -> fire (key, i, st, mods)
 
-    char <- liftIO $ 
-        handleCallback (GLFW.setCharCallback w) $
+    char <- handleCallback (GLFW.setCharCallback w) $
             \fire _ char -> fire char
 
-    mouseButton <- liftIO $
-        handleCallback (GLFW.setMouseButtonCallback w) $
+    mouseButton <- handleCallback (GLFW.setMouseButtonCallback w) $
             \fire _ mb st mods -> fire (mb, st, mods)
 
-    cursorPos <- liftIO $
-        handleCallback (GLFW.setCursorPosCallback w) $
+    cursorPos <- handleCallback (GLFW.setCursorPosCallback w) $
             \fire _ x y -> fire (x, y)
 
-    cursorEnter <- liftIO $
-        handleCallback (GLFW.setCursorEnterCallback w) $
+    cursorEnter <- handleCallback (GLFW.setCursorEnterCallback w) $
             \fire _ st -> fire st
 
 
-    EventSource
-        <$> fromAddHandler windowRefresh
-        <*> fromAddHandler windowClose
-        <*> fromAddHandler windowFocus
-        <*> fromAddHandler windowIconify
-        <*> fromAddHandler windowPos
-        <*> fromAddHandler windowSize
-        <*> fromAddHandler key
-        <*> fromAddHandler char
-        <*> fromAddHandler mouseButton
-        <*> fromAddHandler cursorPos
-        <*> fromAddHandler cursorEnter
+    return $ EventSource
+        windowRefresh
+        windowClose
+        windowFocus
+        windowIconify
+        windowPos
+        windowSize
+        key
+        char
+        mouseButton
+        cursorPos
+        cursorEnter
