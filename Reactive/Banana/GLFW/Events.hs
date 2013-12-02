@@ -30,6 +30,15 @@ instance Button Key where
             KeyState'Released  -> Just Release
             KeyState'Repeating -> Nothing
 
+instance Button MouseButton where
+    button es mb = fmap getState . filterE matchButton $ mouseButton es
+      where
+        matchButton (_, mb', _, _) = mb == mb'
+        getState (_, _, s, _) = case s of
+            MouseButtonState'Pressed  -> Press
+            MouseButtonState'Released -> Release
+
+
 
 data Flag
     = MonitorConnect (Maybe Monitor)
