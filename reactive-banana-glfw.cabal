@@ -14,5 +14,7 @@ cabal-version:       >=1.8
 library
   exposed-modules:
     Reactive.Banana.GLFW
+    Reactive.Banana.GLFW.Events
     Reactive.Banana.GLFW.EventSource
+    Reactive.Banana.GLFW.Utils
   build-depends:       base ==4.6.*, GLFW-b ==1.4.*, reactive-banana ==0.7.*
