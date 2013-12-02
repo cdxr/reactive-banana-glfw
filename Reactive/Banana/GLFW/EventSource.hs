@@ -17,6 +17,8 @@ import Graphics.UI.GLFW as GLFW
 import Reactive.Banana as R
 import Reactive.Banana.Frameworks as R
 
+import Control.Monad
+
 
 data EventSource t = EventSource
     { glfwError     :: Event t (Error, String)
@@ -53,34 +55,24 @@ hc4 = handleCallback $ \fire a b c d -> fire (a, b, c, d)
 hc5 = handleCallback $ \fire a b c d e -> fire (a, b, c, d, e)
 
 
--- | An `EventSource` for a single `Window`.
-eventSource :: forall t. Frameworks t => GLFW.Window -> Moment t (EventSource t)
-eventSource w = do
-    glfwError     <- hc2 GLFW.setErrorCallback
-    monitor       <- hc2 GLFW.setMonitorCallback
-    windowRefresh <- hc1 $ GLFW.setWindowRefreshCallback w
-    windowClose   <- hc1 $ GLFW.setWindowCloseCallback w
-    windowFocus   <- hc2 $ GLFW.setWindowFocusCallback w
-    windowIconify <- hc2 $ GLFW.setWindowIconifyCallback w
-    windowPos     <- hc3 $ GLFW.setWindowPosCallback w
-    windowSize    <- hc3 $ GLFW.setWindowSizeCallback w
-    key           <- hc5 $ GLFW.setKeyCallback w
-    char          <- hc2 $ GLFW.setCharCallback w
-    mouseButton   <- hc4 $ GLFW.setMouseButtonCallback w
-    cursorPos     <- hc3 $ GLFW.setCursorPosCallback w
-    cursorEnter   <- hc2 $ GLFW.setCursorEnterCallback w
+-- | Given a list of `GLFW.Window`s, create an `EventSource` that registers
+-- callbacks for all those windows.
+eventSource :: (Frameworks t) => [GLFW.Window] -> Moment t (EventSource t)
+eventSource ws =
+    EventSource
+        <$> hc2 GLFW.setErrorCallback
+        <*> hc2 GLFW.setMonitorCallback 
+        <*> hc1 (forEachWindow GLFW.setWindowRefreshCallback)
+        <*> hc1 (forEachWindow GLFW.setWindowCloseCallback)
+        <*> hc2 (forEachWindow GLFW.setWindowFocusCallback)
+        <*> hc2 (forEachWindow GLFW.setWindowIconifyCallback)
+        <*> hc3 (forEachWindow GLFW.setWindowPosCallback)
+        <*> hc3 (forEachWindow GLFW.setWindowSizeCallback)
+        <*> hc5 (forEachWindow GLFW.setKeyCallback)
+        <*> hc2 (forEachWindow GLFW.setCharCallback)
+        <*> hc4 (forEachWindow GLFW.setMouseButtonCallback)
+        <*> hc3 (forEachWindow GLFW.setCursorPosCallback)
+        <*> hc2 (forEachWindow GLFW.setCursorEnterCallback)
+  where
+    forEachWindow f x = forM_ ws $ \w -> f w x
 
-    return $ EventSource
-        glfwError
-        monitor
-        windowRefresh
-        windowClose
-        windowFocus
-        windowIconify
-        windowPos
-        windowSize
-        key
-        char
-        mouseButton
-        cursorPos
-        cursorEnter
