@@ -4,14 +4,19 @@ module Reactive.Banana.GLFW.Window
 (
     WindowSource(..),
     bindWindowSource,
+    windowEvents,
+
+    -- * Advanced transformations
     transWindowSource,
+    traverseWindowSource,
 )
 where
 
+import Data.Functor.Identity
 
 import Graphics.UI.GLFW as GLFW
-import Reactive.Banana as R
-import Reactive.Banana.Frameworks as R
+import Reactive.Banana hiding ( Identity )
+import Reactive.Banana.Frameworks
 
 import Reactive.Banana.GLFW.AddHandler
 
@@ -35,21 +40,40 @@ data WindowSource f = WindowSource
 -- | @transWindowSource n w@ is the `WindowSource` resulting from applying
 -- the natural transformation @n@ to each component of @w@.
 transWindowSource :: (forall a. f a -> g a) -> WindowSource f -> WindowSource g
-transWindowSource f w = w
-    { refresh     = f (refresh w)
-    , close       = f (close w)
-    , focus       = f (focus w)
-    , iconify     = f (iconify w)
-    , position    = f (position w)
-    , size        = f (size w)
-    , key         = f (key w)
-    , char        = f (char w)
-    , mouse       = f (mouse w)
-    , cursorPos   = f (cursorPos w)
-    , cursorEnter = f (cursorEnter w)
-    }
+transWindowSource f = runIdentity . traverseWindowSource (Identity . f)
+
+-- | @traversWindowSource
+traverseWindowSource
+    :: (Applicative m)
+    => (forall a. f a -> m (g a))
+    -> WindowSource f
+    -> m (WindowSource g)
+traverseWindowSource f w = WindowSource
+    <$> f (refresh w)
+    <*> f (close w)
+    <*> f (focus w)
+    <*> f (iconify w)
+    <*> f (position w)
+    <*> f (size w)
+    <*> f (key w)
+    <*> f (char w)
+    <*> f (mouse w)
+    <*> f (cursorPos w)
+    <*> f (cursorEnter w)
 
 
+-- | Obtain an `Event` from every `AddHandler'` contained in the
+-- `WindowSource`.
+--
+windowEvents
+    :: Frameworks t
+    => WindowSource AddHandler'
+    -> Moment t (WindowSource (Event t))
+windowEvents = traverseWindowSource fromAddHandler'
+
+
+-- | Create a new `AddHandler'` for every window-specific callback provided
+-- by GLFW.
 bindWindowSource :: GLFW.Window -> IO (WindowSource AddHandler')
 bindWindowSource w = WindowSource
     <$> hc1 (GLFW.setWindowRefreshCallback w)
