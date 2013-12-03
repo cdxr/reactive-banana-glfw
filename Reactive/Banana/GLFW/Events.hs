@@ -44,6 +44,7 @@ data Flag
     = MonitorConnect (Maybe Monitor)
     | WindowFocus (Maybe Window)
     | WindowIconify (Maybe Window)
+    | CursorInWindow (Maybe Window)
     deriving (Show, Eq, Ord)
 
 
@@ -55,6 +56,8 @@ flag es f = case f of
         mk (windowFocus es) win FocusState'Focused
     WindowIconify win ->
         mk (windowIconify es) win IconifyState'Iconified
+    CursorInWindow win ->
+        mk (cursorEnter es) win CursorState'InWindow
   where
     mk :: (Eq m, Eq b) => Event t (m, b) -> Maybe m -> b -> Event t Bool
     mk e mmatch true = (== true) . snd <$> filterE (match . fst) e
