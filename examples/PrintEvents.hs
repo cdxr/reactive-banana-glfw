@@ -11,16 +11,38 @@ import Graphics.UI.GLFW as GLFW
 import Reactive.Banana as R
 import Reactive.Banana.Frameworks
 
-import Reactive.Banana.GLFW
-import Reactive.Banana.GLFW.EventSource
+import Reactive.Banana.GLFW.Window
+import Reactive.Banana.GLFW.Utils
 
 
 
 main :: IO ()
-main = withWindow $ \w -> adapt w $ \es ->
-    return $ exit es `union` (putStrLn <$> eventShow es)
+main = withWindow $ \window -> do
+    ws <- bindWindowSource window
+    network <- compile $ do
+        w <- windowEvents ws
+        --reactimate $ exitSuccess <$ pressed (button w Key'Escape)
+        reactimate $ putStrLn <$> showEvents w
+    actuate network
+    forever GLFW.pollEvents
+
+
+showEvents :: WindowSource (Event t) -> Event t String
+showEvents w = unions
+    [ "window refreshed"       <$  refresh w
+    , "window closed"          <$  close w
+    , label "window focused"   <$> focus w
+    , label "window iconified" <$> iconify w
+    , label "window pos"       <$> position w
+    , label "window size"      <$> size w
+    , show <$> key w
+    , show <$> char w
+    , show <$> mouse w
+    , show <$> cursorPos w
+    , show <$> cursorEnter w
+    ]
   where
-    exit es = exitSuccess <$ pressed (button es Key'Escape)
+    label s a = s ++ ": " ++ show a
 
 
 withWindow :: (GLFW.Window -> IO ()) -> IO ()
@@ -35,24 +57,3 @@ withWindow = withGLFW . bracket create destroy
         return win
 
     destroy = GLFW.destroyWindow
-
-
-eventShow :: EventSource t -> Event t String
-eventShow es = unions
-    [ label "window focused"    <$> flag es (WindowFocus Nothing)
-    , label "window iconified"  <$> flag es (WindowIconify Nothing)
-    , label "monitor connected" <$> flag es (MonitorConnect Nothing)
-    ]
-  where
-    label s a = s ++ ": " ++ show a
-
-
-type NetworkDescription t = EventSource t -> Moment t (Event t (IO ()))
-
-
-adapt :: GLFW.Window -> (forall t. NetworkDescription t) -> IO ()
-adapt w netdesc = do
-    network <- compile $ reactimate =<< netdesc =<< eventSource [w]
-
-    actuate network
-    forever GLFW.pollEvents
