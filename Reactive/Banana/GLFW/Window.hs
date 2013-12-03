@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 
 module Reactive.Banana.GLFW.Window
@@ -5,6 +6,7 @@ module Reactive.Banana.GLFW.Window
     WindowSource(..),
     bindWindowSource,
     windowEvents,
+    combineWindows,
 
     -- * Advanced transformations
     transWindowSource,
@@ -13,6 +15,7 @@ module Reactive.Banana.GLFW.Window
 where
 
 import Data.Functor.Identity
+import Data.Function ( on )
 
 import Graphics.UI.GLFW as GLFW
 import Reactive.Banana hiding ( Identity )
@@ -35,6 +38,33 @@ data WindowSource f = WindowSource
     , cursorPos   :: f (Double, Double)
     , cursorEnter :: f Bool
     }
+
+
+-- this is essentially a monomorphic definition of:
+--   instance Monoid1 (WindowSource f)
+
+-- | @combineWindows f a b@ produces a `Window` with components defined by
+-- @f ca cb@ for each component @ca@ in @a@ and @cb@ in @b@.
+combineWindows
+    :: (forall a. f a -> f a -> f a)
+    -> WindowSource f
+    -> WindowSource f
+    -> WindowSource f
+combineWindows f w0 w1 = WindowSource
+    { refresh     = combine refresh
+    , close       = combine close
+    , focus       = combine focus
+    , iconify     = combine iconify
+    , position    = combine position
+    , size        = combine size
+    , key         = combine key
+    , char        = combine char
+    , mouse       = combine mouse
+    , cursorPos   = combine cursorPos
+    , cursorEnter = combine cursorEnter
+    }
+  where
+    combine r = on f r w0 w1
 
 
 -- | @transWindowSource n w@ is the `WindowSource` resulting from applying
