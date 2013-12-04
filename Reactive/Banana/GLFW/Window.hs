@@ -1,14 +1,20 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 
 module Reactive.Banana.GLFW.Window
 (
+    -- * WindowSource
     WindowSource(..),
     bindWindowSource,
     windowEvents,
-    combineWindows,
+    -- ** Event types
+    KeyPress(..),
+    ScanCode(..),
+    MouseClick(..),
 
     -- * Advanced transformations
+    combineWindows,
     transWindowSource,
     traverseWindowSource,
 )
@@ -24,6 +30,16 @@ import Reactive.Banana.Frameworks
 import Reactive.Banana.GLFW.AddHandler
 
 
+newtype ScanCode = SC Int
+    deriving (Show, Read, Eq, Ord)
+
+data KeyPress = KeyPress !Key !ScanCode !KeyState !ModifierKeys
+    deriving (Show, Eq, Ord)
+
+data MouseClick = MouseClick !MouseButton !MouseButtonState !ModifierKeys
+    deriving (Show, Eq, Ord)
+
+
 -- | A collection of event sources for a `GLFW.Window`.
 data WindowSource f = WindowSource
     { refresh     :: f ()
@@ -32,9 +48,9 @@ data WindowSource f = WindowSource
     , iconify     :: f Bool
     , position    :: f (Int, Int)
     , size        :: f (Int, Int)
-    , key         :: f (Key, Int, KeyState, ModifierKeys)
+    , key         :: f KeyPress
     , char        :: f Char
-    , mouse       :: f (MouseButton, MouseButtonState, ModifierKeys)
+    , mouse       :: f MouseClick
     , cursorPos   :: f (Double, Double)
     , cursorEnter :: f Bool
     }
@@ -114,12 +130,18 @@ bindWindowSource w = WindowSource
         <$> hc2 (GLFW.setWindowIconifyCallback w))
     <*> hc3 (GLFW.setWindowPosCallback w)
     <*> hc3 (GLFW.setWindowSizeCallback w)
-    <*> hc5 (GLFW.setKeyCallback w)
+    <*> handleCallback (\f _ k i s m -> f $ KeyPress k (SC i) s m)
+            (GLFW.setKeyCallback w)
     <*> hc2 (GLFW.setCharCallback w)
-    <*> hc4 (GLFW.setMouseButtonCallback w)
+    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s m)
+            (GLFW.setMouseButtonCallback w)
     <*> hc3 (GLFW.setCursorPosCallback w)
     <*> (fmap (== CursorState'InWindow)
         <$> hc2 (GLFW.setCursorEnterCallback w))
+  where
+    hc1 = handleCallback $ \fire _ -> fire ()
+    hc2 = handleCallback $ \fire _ a -> fire a
+    hc3 = handleCallback $ \fire _ a b -> fire (a, b)
 
 
 -- | Create an `AddHandler'` for a callback in the shape provided by GLFW-b
@@ -131,11 +153,3 @@ handleCallback f cb = do
     (ah, fire) <- newAddHandler
     liftIO $ cb $ Just $ f fire
     return $ AddHandler' ah
-
-
-hc1 = handleCallback $ \fire _ -> fire ()
-hc2 = handleCallback $ \fire _ a -> fire a
-hc3 = handleCallback $ \fire _ a b -> fire (a, b)
-hc4 = handleCallback $ \fire _ a b c -> fire (a, b, c)
-hc5 = handleCallback $ \fire _ a b c d -> fire (a, b, c, d)
-
