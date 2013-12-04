@@ -1,65 +1,77 @@
-module Reactive.Banana.GLFW.Events where
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
-import Control.Monad ( void )
+module Reactive.Banana.GLFW.Events
+(
+    -- * Press
+    Press(..),
+    Pressable(..),
+    press,
+    release,
+    -- * Button
+    Button(..),
+)
+where
+
 
 import Reactive.Banana
 import Graphics.UI.GLFW
 
-import Reactive.Banana.GLFW.EventSource
+import Reactive.Banana.GLFW.Window
 
 
-data ButtonState = Press | Release
-    deriving (Show, Eq, Ord)
-
-pressed :: Event t ButtonState -> Event t ()
-pressed = void . filterE (== Press)
-
-released :: Event t ButtonState -> Event t ()
-released = void . filterE (== Release)
+data Press = Release | Press
+    deriving (Show, Eq, Ord, Bounded, Enum)
 
 
-class Button a where
-    button :: EventSource t -> a -> Event t ButtonState
+-- | Class of types that represent the pressing or releasing of a `Button`.
+class Pressable b where
+    toPress :: b -> Maybe Press
 
-instance Button Key where
-    button es k = filterJust . fmap getState . filterE matchKey $ key es
+press :: (Pressable a) => a -> Bool
+press = (== Just Press) . toPress
+
+release :: (Pressable a) => a -> Bool
+release = (== Just Release) . toPress
+
+
+instance Pressable Press where
+    toPress = Just
+
+instance Pressable KeyState where
+    toPress ks = case ks of
+        KeyState'Pressed   -> Just Press
+        KeyState'Released  -> Just Release
+        KeyState'Repeating -> Nothing
+
+instance Pressable KeyPress where
+    toPress (KeyPress _ _ s _) = toPress s
+
+instance Pressable MouseButtonState where
+    toPress mbs = Just $ case mbs of
+        MouseButtonState'Pressed  -> Press
+        MouseButtonState'Released -> Release
+
+instance Pressable MouseClick where
+    toPress (MouseClick _ s _) = toPress s
+
+
+
+class (Pressable p) => Button b p | b -> p where
+    button :: WindowSource (Event t) -> b -> Event t p
+
+instance Button Key KeyPress where
+    button w k = filterE matchKey $ key w
       where
-        matchKey (_, k', _, _, _) = k == k'
-        getState (_, _, _, s, _) = case s of
-            KeyState'Pressed   -> Just Press
-            KeyState'Released  -> Just Release
-            KeyState'Repeating -> Nothing
+        matchKey (KeyPress k' _ _ _) = k == k'
 
-instance Button MouseButton where
-    button es mb = fmap getState . filterE matchButton $ mouseButton es
+instance Button ScanCode KeyPress where
+    button w sc = filterE matchKey $ key w
       where
-        matchButton (_, mb', _, _) = mb == mb'
-        getState (_, _, s, _) = case s of
-            MouseButtonState'Pressed  -> Press
-            MouseButtonState'Released -> Release
+        matchKey (KeyPress _ sc' _ _) = sc == sc'
 
-
-
-data Flag
-    = MonitorConnect (Maybe Monitor)
-    | WindowFocus (Maybe Window)
-    | WindowIconify (Maybe Window)
-    | CursorInWindow (Maybe Window)
-    deriving (Show, Eq, Ord)
-
-
-flag :: EventSource t -> Flag -> Event t Bool
-flag es f = case f of
-    MonitorConnect mon ->
-        mk (monitor es) mon MonitorState'Connected
-    WindowFocus win ->
-        mk (windowFocus es) win FocusState'Focused
-    WindowIconify win ->
-        mk (windowIconify es) win IconifyState'Iconified
-    CursorInWindow win ->
-        mk (cursorEnter es) win CursorState'InWindow
-  where
-    mk :: (Eq m, Eq b) => Event t (m, b) -> Maybe m -> b -> Event t Bool
-    mk e mmatch true = (== true) . snd <$> filterE (match . fst) e
+instance Button MouseButton MouseClick where
+    button w mb = filterE matchButton $ mouse w
       where
-          match = maybe (const True) (==) mmatch
+        matchButton (MouseClick mb' _ _) = mb == mb'
+

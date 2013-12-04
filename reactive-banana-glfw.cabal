@@ -1,6 +1,6 @@
 name:                reactive-banana-glfw
 version:             0.1.0.0
-synopsis:            library interfacing reactive-banana with glfw-b
+synopsis:            reactive-banana for GLFW
 -- description:         
 license:             BSD3
 license-file:        LICENSE
@@ -14,7 +14,12 @@ cabal-version:       >=1.8
 library
   exposed-modules:
     Reactive.Banana.GLFW
+    Reactive.Banana.GLFW.Window
     Reactive.Banana.GLFW.Events
-    Reactive.Banana.GLFW.EventSource
+    Reactive.Banana.GLFW.AddHandler
     Reactive.Banana.GLFW.Utils
-  build-depends:       base ==4.6.*, GLFW-b ==1.4.*, reactive-banana ==0.7.*
+  build-depends:
+    base            == 4.6.*,
+    GLFW-b          == 1.4.*,
+    reactive-banana == 0.7.*,
+    transformers    == 0.3.*
