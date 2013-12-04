@@ -14,6 +14,7 @@ module Reactive.Banana.GLFW
     MouseClick(..),
     KeyPress(..),
     -- ** Button Identifiers
+    ModKey,
     GLFW.MouseButton(..),
     ScanCode(..),
     GLFW.Key(..),

@@ -11,9 +11,7 @@ import Graphics.UI.GLFW as GLFW
 import Reactive.Banana as R
 import Reactive.Banana.Frameworks
 
-import Reactive.Banana.GLFW.Window
-import Reactive.Banana.GLFW.Utils
-
+import Reactive.Banana.GLFW
 
 
 main :: IO ()
@@ -21,7 +19,7 @@ main = withWindow $ \window -> do
     ws <- bindWindowSource window
     network <- compile $ do
         w <- windowEvents ws
-        --reactimate $ exitSuccess <$ pressed (button w Key'Escape)
+        reactimate $ exitSuccess <$ filterE press (button w Key'Escape)
         reactimate $ putStrLn <$> showEvents w
     actuate network
     forever GLFW.pollEvents

@@ -5,14 +5,19 @@ module Reactive.Banana.GLFW.Events
 (
     -- * Press
     Press(..),
-    Pressable(..),
+    PressEvent(..),
     press,
     release,
+    hold,
+    -- * ModKey
+    ModEvent(..),
+    mods,
     -- * Button
     Button(..),
 )
 where
 
+import Data.Maybe ( isNothing )
 
 import Reactive.Banana
 import Graphics.UI.GLFW
@@ -25,40 +30,50 @@ data Press = Release | Press
 
 
 -- | Class of types that represent the pressing or releasing of a `Button`.
-class Pressable b where
-    toPress :: b -> Maybe Press
+class PressEvent b where
+    getPress :: b -> Maybe Press
 
-press :: (Pressable a) => a -> Bool
-press = (== Just Press) . toPress
+press :: (PressEvent a) => a -> Bool
+press = (== Just Press) . getPress
 
-release :: (Pressable a) => a -> Bool
-release = (== Just Release) . toPress
+release :: (PressEvent a) => a -> Bool
+release = (== Just Release) . getPress
+
+hold :: KeyPress -> Bool
+hold = isNothing . getPress
 
 
-instance Pressable Press where
-    toPress = Just
-
-instance Pressable KeyState where
-    toPress ks = case ks of
+instance PressEvent KeyPress where
+    getPress (KeyPress _ _ s _) = case s of
         KeyState'Pressed   -> Just Press
         KeyState'Released  -> Just Release
         KeyState'Repeating -> Nothing
 
-instance Pressable KeyPress where
-    toPress (KeyPress _ _ s _) = toPress s
-
-instance Pressable MouseButtonState where
-    toPress mbs = Just $ case mbs of
+instance PressEvent MouseClick where
+    getPress (MouseClick _ s _) = Just $ case s of
         MouseButtonState'Pressed  -> Press
         MouseButtonState'Released -> Release
 
-instance Pressable MouseClick where
-    toPress (MouseClick _ s _) = toPress s
 
 
+class ModEvent a where
+    modkey :: ModKey -> a -> Bool
 
-class (Pressable p) => Button b p | b -> p where
-    button :: WindowSource (Event t) -> b -> Event t p
+instance ModEvent KeyPress where
+    modkey m (KeyPress _ _ _ ms) = m `elem` ms
+
+instance ModEvent MouseClick where
+    modkey m (MouseClick _ _ ms) = m `elem` ms
+
+-- | @mods ms a@ is True iff for all @m@ in @ms@, @modkey m a@.
+--
+-- @mods [] a@ is True only when @a@ includes no ModKeys.
+mods :: (ModEvent a) => [ModKey] -> a -> Bool
+mods ms a = all (\m -> modkey m a == elem m ms) [Shift .. Super]
+
+    
+class (PressEvent e, ModEvent e) => Button b e | b -> e where
+    button :: WindowSource (Event t) -> b -> Event t e
 
 instance Button Key KeyPress where
     button w k = filterE matchKey $ key w
@@ -74,4 +89,3 @@ instance Button MouseButton MouseClick where
     button w mb = filterE matchButton $ mouse w
       where
         matchButton (MouseClick mb' _ _) = mb == mb'
-

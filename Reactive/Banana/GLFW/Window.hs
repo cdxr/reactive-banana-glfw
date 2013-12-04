@@ -12,6 +12,7 @@ module Reactive.Banana.GLFW.Window
     KeyPress(..),
     ScanCode(..),
     MouseClick(..),
+    ModKey(..),
 
     -- * Advanced transformations
     combineWindows,
@@ -33,11 +34,23 @@ import Reactive.Banana.GLFW.AddHandler
 newtype ScanCode = SC Int
     deriving (Show, Read, Eq, Ord)
 
-data KeyPress = KeyPress !Key !ScanCode !KeyState !ModifierKeys
+data KeyPress = KeyPress !Key !ScanCode !KeyState ![ModKey]
     deriving (Show, Eq, Ord)
 
-data MouseClick = MouseClick !MouseButton !MouseButtonState !ModifierKeys
+data MouseClick = MouseClick !MouseButton !MouseButtonState ![ModKey]
     deriving (Show, Eq, Ord)
+
+
+data ModKey = Shift | Ctl | Alt | Super
+    deriving (Show, Read, Ord, Eq, Bounded, Enum)
+
+listModKeys :: ModifierKeys -> [ModKey]
+listModKeys (ModifierKeys sh c a s) = map snd $ filter fst
+    [ (sh, Shift)
+    , (c,  Ctl)
+    , (a,  Alt)
+    , (s,  Super)
+    ]
 
 
 -- | A collection of event sources for a `GLFW.Window`.
@@ -130,10 +143,10 @@ bindWindowSource w = WindowSource
         <$> hc2 (GLFW.setWindowIconifyCallback w))
     <*> hc3 (GLFW.setWindowPosCallback w)
     <*> hc3 (GLFW.setWindowSizeCallback w)
-    <*> handleCallback (\f _ k i s m -> f $ KeyPress k (SC i) s m)
+    <*> handleCallback (\f _ k i s m -> f $ KeyPress k (SC i) s (listModKeys m))
             (GLFW.setKeyCallback w)
     <*> hc2 (GLFW.setCharCallback w)
-    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s m)
+    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s (listModKeys m))
             (GLFW.setMouseButtonCallback w)
     <*> hc3 (GLFW.setCursorPosCallback w)
     <*> (fmap (== CursorState'InWindow)
