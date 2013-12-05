@@ -145,7 +145,7 @@ bindWindowSource w = WindowSource
     <*> handleCallback (\f _ k i s m -> f $ KeyPress k (SC i) s (listModKeys m))
             (GLFW.setKeyCallback w)
     <*> hc2 (GLFW.setCharCallback w)
-    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s (listModKeys m)
+    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s (listModKeys m))
             (GLFW.setMouseButtonCallback w)
     <*> hc3 (GLFW.setCursorPosCallback w)
     <*> (fmap (== CursorState'InWindow)
