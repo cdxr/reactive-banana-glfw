@@ -16,16 +16,15 @@ import Reactive.Banana.GLFW
 
 main :: IO ()
 main = withWindow $ \window -> do
-    ws <- bindWindowSource window
     network <- compile $ do
-        w <- windowEvents ws
+        w <- windowEvents window
         reactimate $ exitSuccess <$ filterE press (button w Key'Escape)
         reactimate $ putStrLn <$> showEvents w
     actuate network
     forever GLFW.pollEvents
 
 
-showEvents :: WindowSource (Event t) -> Event t String
+showEvents :: WindowEvents t -> Event t String
 showEvents w = unions
     [ "window refreshed"       <$  refresh w
     , "window closed"          <$  close w
@@ -47,7 +46,7 @@ withWindow :: (GLFW.Window -> IO ()) -> IO ()
 withWindow = withGLFW . bracket create destroy
   where
     create = do
-        let title = "basic reactivebanana-glfw example"
+        let title = "reactive-banana-glfw example: PrintEvents.hs"
         Just win <- GLFW.createWindow 200 200 title Nothing Nothing
 
         GLFW.makeContextCurrent $ Just win

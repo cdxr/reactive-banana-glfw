@@ -73,7 +73,7 @@ mods ms a = all (\m -> modkey m a == elem m ms) [Shift .. Super]
 
     
 class (PressEvent e, ModEvent e) => Button b e | b -> e where
-    button :: WindowSource (Event t) -> b -> Event t e
+    button :: WindowEvents t -> b -> Event t e
 
 instance Button Key KeyPress where
     button w k = filterE matchKey $ key w

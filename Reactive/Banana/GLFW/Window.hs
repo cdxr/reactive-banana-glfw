@@ -5,13 +5,22 @@ module Reactive.Banana.GLFW.Window
 (
     -- * WindowSource
     WindowSource(..),
-    bindWindowSource,
-    windowEvents,
+
     -- ** Event types
-    KeyPress(..),
-    ScanCode(..),
     MouseClick(..),
+    KeyPress(..),
+
+    ScanCode(..),
     ModKey(..),
+
+    -- ** WindowEvents
+    WindowEvents,
+    windowEvents,
+    eventsFromHandlers,
+
+    -- ** WindowHandlers
+    WindowHandlers,
+    windowHandlers,
 
     -- * Advanced transformations
     combineWindows,
@@ -20,6 +29,7 @@ module Reactive.Banana.GLFW.Window
 )
 where
 
+import Control.Monad
 import Data.Functor.Identity
 import Data.Function ( on )
 
@@ -42,6 +52,7 @@ data MouseClick = MouseClick !MouseButton !MouseButtonState ![ModKey]
 
 data ModKey = Shift | Ctl | Alt | Super
     deriving (Show, Read, Ord, Eq, Bounded, Enum)
+
 
 listModKeys :: ModifierKeys -> [ModKey]
 listModKeys (ModifierKeys sh c a s) = map snd $ filter fst
@@ -66,6 +77,75 @@ data WindowSource f = WindowSource
     , cursorPos   :: f (Double, Double)
     , cursorEnter :: f Bool
     }
+
+
+type WindowEvents t = WindowSource (Event t)
+
+-- | Obtain a `WindowEvents` for a `GLFW.Window`.
+--
+-- This will register every callback associated with this Window.
+-- If you need to register additional callbacks outside of reactive-banana,
+-- see `windowHandlers`.
+--
+windowEvents :: (Frameworks t) => GLFW.Window -> Moment t (WindowEvents t)
+windowEvents = eventsFromHandlers <=< liftIO . windowHandlers
+
+
+type WindowHandlers = WindowSource AddHandler'
+
+-- | Obtain a `WindowHandlers` for a `GLFW.Window`.
+--
+-- You only need a `WindowHandlers` if you need to register callbacks
+-- outside of reactive-banana. Otherwise, use `windowEvents`.
+--
+-- Use `registerCallback` on the components of the `WindowHandlers` for
+-- traditional `IO` callbacks. Then use `eventsFromHandlers` to obtain a
+-- `WindowEvents` to use reactive-banana as well.
+--
+-- Note that this will register every callback associated with this Window.
+-- If a callback is registered directly with GLFW instead of this
+-- `WindowHandlers`, it will stop working for this `WindowHandlers`.
+--
+windowHandlers :: GLFW.Window -> IO WindowHandlers
+windowHandlers w = WindowSource
+    <$> hc1 (GLFW.setWindowRefreshCallback w)
+    <*> hc1 (GLFW.setWindowCloseCallback w)
+    <*> (fmap (== FocusState'Focused)
+        <$> hc2 (GLFW.setWindowFocusCallback w))
+    <*> (fmap (== IconifyState'Iconified)
+        <$> hc2 (GLFW.setWindowIconifyCallback w))
+    <*> hc3 (GLFW.setWindowPosCallback w)
+    <*> hc3 (GLFW.setWindowSizeCallback w)
+    <*> handleCallback (\f _ k i s m -> f $ KeyPress k (SC i) s (listModKeys m))
+            (GLFW.setKeyCallback w)
+    <*> hc2 (GLFW.setCharCallback w)
+    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s (listModKeys m))
+            (GLFW.setMouseButtonCallback w)
+    <*> hc3 (GLFW.setCursorPosCallback w)
+    <*> (fmap (== CursorState'InWindow)
+        <$> hc2 (GLFW.setCursorEnterCallback w))
+  where
+    hc1 = handleCallback $ \fire _ -> fire ()
+    hc2 = handleCallback $ \fire _ a -> fire a
+    hc3 = handleCallback $ \fire _ a b -> fire (a, b)
+
+
+
+-- | Obtain a `WindowEvents` from a `WindowHandlers`.
+eventsFromHandlers :: Frameworks t => WindowHandlers -> Moment t (WindowEvents t)
+eventsFromHandlers = traverseWindowSource fromAddHandler'
+
+
+
+-- | Create an `AddHandler'` for a callback in the shape provided by GLFW-b
+handleCallback
+    :: ((a -> IO ()) -> cb)
+    -> (Maybe cb -> IO ())
+    -> IO (AddHandler' a)
+handleCallback f cb = do
+    (ah, fire) <- newAddHandler
+    liftIO $ cb $ Just $ f fire
+    return $ AddHandler' ah
 
 
 -- this is essentially a monomorphic definition of:
@@ -118,50 +198,3 @@ traverseWindowSource f w = WindowSource
     <*> f (mouse w)
     <*> f (cursorPos w)
     <*> f (cursorEnter w)
-
-
--- | Obtain an `Event` from every `AddHandler'` contained in the
--- `WindowSource`.
---
-windowEvents
-    :: Frameworks t
-    => WindowSource AddHandler'
-    -> Moment t (WindowSource (Event t))
-windowEvents = traverseWindowSource fromAddHandler'
-
-
--- | Create a new `AddHandler'` for every window-specific callback provided
--- by GLFW.
-bindWindowSource :: GLFW.Window -> IO (WindowSource AddHandler')
-bindWindowSource w = WindowSource
-    <$> hc1 (GLFW.setWindowRefreshCallback w)
-    <*> hc1 (GLFW.setWindowCloseCallback w)
-    <*> (fmap (== FocusState'Focused)
-        <$> hc2 (GLFW.setWindowFocusCallback w))
-    <*> (fmap (== IconifyState'Iconified)
-        <$> hc2 (GLFW.setWindowIconifyCallback w))
-    <*> hc3 (GLFW.setWindowPosCallback w)
-    <*> hc3 (GLFW.setWindowSizeCallback w)
-    <*> handleCallback (\f _ k i s m -> f $ KeyPress k (SC i) s (listModKeys m))
-            (GLFW.setKeyCallback w)
-    <*> hc2 (GLFW.setCharCallback w)
-    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s (listModKeys m))
-            (GLFW.setMouseButtonCallback w)
-    <*> hc3 (GLFW.setCursorPosCallback w)
-    <*> (fmap (== CursorState'InWindow)
-        <$> hc2 (GLFW.setCursorEnterCallback w))
-  where
-    hc1 = handleCallback $ \fire _ -> fire ()
-    hc2 = handleCallback $ \fire _ a -> fire a
-    hc3 = handleCallback $ \fire _ a b -> fire (a, b)
-
-
--- | Create an `AddHandler'` for a callback in the shape provided by GLFW-b
-handleCallback
-    :: ((a -> IO ()) -> cb)
-    -> (Maybe cb -> IO ())
-    -> IO (AddHandler' a)
-handleCallback f cb = do
-    (ah, fire) <- newAddHandler
-    liftIO $ cb $ Just $ f fire
-    return $ AddHandler' ah

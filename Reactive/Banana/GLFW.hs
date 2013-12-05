@@ -1,5 +1,3 @@
-{-# LANGUAGE Rank2Types #-}
-
 module Reactive.Banana.GLFW
 (
     module Reactive.Banana.GLFW.Events,
@@ -7,7 +5,7 @@ module Reactive.Banana.GLFW
 
     -- * Windows
     WindowSource(..),
-    bindWindowSource,
+    WindowEvents,
     windowEvents,
 
     -- * Event Types
