@@ -30,12 +30,12 @@ showEvents w = unions
     , "window closed"          <$  close w
     , label "window focused"   <$> focus w
     , label "window iconified" <$> iconify w
-    , label "window pos"       <$> position w
-    , label "window size"      <$> size w
-    , show <$> key w
+    , label "window pos"       <$> move w
+    , label "window size"      <$> resize w
     , show <$> char w
-    , show <$> mouse w
-    , show <$> cursorPos w
+    , show <$> keyChange w
+    , show <$> mouseChange w
+    , show <$> cursorMove w
     , show <$> cursorEnter w
     ]
   where

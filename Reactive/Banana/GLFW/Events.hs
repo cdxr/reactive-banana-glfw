@@ -76,16 +76,16 @@ class (PressEvent e, ModEvent e) => Button b e | b -> e where
     button :: WindowEvents t -> b -> Event t e
 
 instance Button Key KeyPress where
-    button w k = filterE matchKey $ key w
+    button w k = filterE matchKey $ keyChange w
       where
         matchKey (KeyPress k' _ _ _) = k == k'
 
 instance Button ScanCode KeyPress where
-    button w sc = filterE matchKey $ key w
+    button w sc = filterE matchKey $ keyChange w
       where
         matchKey (KeyPress _ sc' _ _) = sc == sc'
 
 instance Button MouseButton MouseClick where
-    button w mb = filterE matchButton $ mouse w
+    button w mb = filterE matchButton $ mouseChange w
       where
         matchButton (MouseClick mb' _ _) = mb == mb'
