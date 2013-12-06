@@ -17,6 +17,7 @@ library
     Reactive.Banana.GLFW.Types
     Reactive.Banana.GLFW.Window
     Reactive.Banana.GLFW.Events
+    Reactive.Banana.GLFW.Behaviors
     Reactive.Banana.GLFW.Utils
     Reactive.Banana.GLFW.WindowHandler
     Reactive.Banana.GLFW.AddHandler

@@ -3,17 +3,20 @@
 
 module Reactive.Banana.GLFW.Events
 (
-    -- * Press
+    -- * Button
+    Button(..),
+    -- ** Press
     Press(..),
     PressEvent(..),
     press,
     release,
     hold,
-    -- * ModKey
+    -- ** ModKey
     ModEvent(..),
     mods,
-    -- * Button
-    Button(..),
+
+    -- * Cursor
+    cursorMove'
 )
 where
 
@@ -89,3 +92,13 @@ instance Button MouseButton MouseClick where
     button w mb = filterE matchButton $ mouseChange w
       where
         matchButton (MouseClick mb' _ _) = mb == mb'
+
+
+
+-- | @cursor w@ is @Just@ the cursor position, or @Nothing@ if the cursor
+-- is not on the screen.
+cursorMove' :: WindowEvents t -> Event t (Maybe (Double, Double))
+cursorMove' w = (Just <$> whenE cursorInWindow (cursorMove w))
+        `union` (Nothing <$ filterE not (cursorEnter w))
+  where
+    cursorInWindow = stepper False $ cursorEnter w
