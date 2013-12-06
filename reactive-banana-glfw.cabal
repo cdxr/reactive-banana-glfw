@@ -16,11 +16,11 @@ library
     Reactive.Banana.GLFW
     Reactive.Banana.GLFW.Types
     Reactive.Banana.GLFW.Window
-    Reactive.Banana.GLFW.Events
-    Reactive.Banana.GLFW.Behaviors
+    Reactive.Banana.GLFW.Button
     Reactive.Banana.GLFW.Utils
     Reactive.Banana.GLFW.WindowHandler
     Reactive.Banana.GLFW.AddHandler
+    Reactive.Banana.GLFW.Internal.WindowE
   build-depends:
     base            == 4.6.*,
     GLFW-b          == 1.4.*,

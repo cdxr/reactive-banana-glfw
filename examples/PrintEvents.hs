@@ -24,7 +24,7 @@ main = withWindow $ \window -> do
     forever GLFW.pollEvents
 
 
-showEvents :: WindowEvents t -> Event t String
+showEvents :: WindowE t -> Event t String
 showEvents w = unions
     [ "window refreshed"       <$  refresh w
     , "window closed"          <$  close w

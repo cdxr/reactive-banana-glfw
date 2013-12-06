@@ -1,0 +1,4 @@
+- guarantee that `focus w` always emits `False` before triggering "synthetic"
+  button release events.
+  - implement `trueRelease w`, an `Event` that distinguishes button releases
+    that were not caused by a loss of window focus.

@@ -1,7 +1,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Reactive.Banana.GLFW.Events
+module Reactive.Banana.GLFW.Button
 (
     -- * Button
     Button(..),
@@ -14,9 +14,6 @@ module Reactive.Banana.GLFW.Events
     -- ** ModKey
     ModEvent(..),
     mods,
-
-    -- * Cursor
-    cursorMove'
 )
 where
 
@@ -76,7 +73,7 @@ mods ms a = all (\m -> modkey m a == elem m ms) [Shift .. Super]
 
     
 class (PressEvent e, ModEvent e) => Button b e | b -> e where
-    button :: WindowEvents t -> b -> Event t e
+    button :: WindowE t -> b -> Event t e
 
 instance Button Key KeyPress where
     button w k = filterE matchKey $ keyChange w
@@ -92,13 +89,3 @@ instance Button MouseButton MouseClick where
     button w mb = filterE matchButton $ mouseChange w
       where
         matchButton (MouseClick mb' _ _) = mb == mb'
-
-
-
--- | @cursor w@ is @Just@ the cursor position, or @Nothing@ if the cursor
--- is not on the screen.
-cursorMove' :: WindowEvents t -> Event t (Maybe (Double, Double))
-cursorMove' w = (Just <$> whenE cursorInWindow (cursorMove w))
-        `union` (Nothing <$ filterE not (cursorEnter w))
-  where
-    cursorInWindow = stepper False $ cursorEnter w
