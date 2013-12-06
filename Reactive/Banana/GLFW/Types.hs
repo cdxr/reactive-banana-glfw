@@ -11,8 +11,7 @@ module Reactive.Banana.GLFW.Types
     ScanCode(..),
     ModKey(..),
     GLFW.Key(..),
-)
-where
+) where
 
 import Graphics.UI.GLFW as GLFW
 

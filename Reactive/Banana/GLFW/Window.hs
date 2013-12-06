@@ -11,53 +11,43 @@ module Reactive.Banana.GLFW.Window
     fromWindowHandler,
     window,
 
-    -- * Window Events
-    -- ** Properties
+    -- * Events
     refresh,
     close,
     focus,
     iconify,
 
-    -- ** Geometry
+    -- * Position
+    --position,
     move,
-    resize,
-    size,
+    move',
 
-    -- * Input
-    -- ** Buttons
+    -- * Size
+    size,
+    resize,
+
+    -- * Buttons
     char,
     keyChange,
     mouseChange,
-    -- ** Cursor
-    cursorMove,
-    cursorMove',
-    cursorPos,
-    cursorEnter,
-    -- *** Origin
-    CursorOrigin(..),
-    cursorOrigin,
-    setCursorOrigin,
-)
-where
+) where
 
 import Reactive.Banana
 import Reactive.Banana.GLFW.Types
+import Reactive.Banana.GLFW.Internal.Utils
 import Reactive.Banana.GLFW.Internal.WindowE
 
 
--- | @cursorMove' w@ emits @Just@ the cursor position whenever the cursor moves
--- inside @window w@, and emits @Nothing@ when the cursor exits the
--- window.
---
--- This is a combination of `cursorMove` and `cursorEnter`.
-cursorMove' :: WindowE t -> Event t (Maybe (Double, Double))
-cursorMove' w = (Just <$> whenE cursorInWindow (cursorMove w))
-        `union` (Nothing <$ filterE not (cursorEnter w))
-  where
-    cursorInWindow = stepper False $ cursorEnter w
+-- | @move' w@ emits @Just@ the window position whenever @window w@ moves,
+-- and emits @Nothing@ when the window is iconified.
+move' :: WindowE t -> Event t (Maybe (Int, Int))
+move' w = spigot (not <$> iconify w) (move w)
 
 
--- | @cursorPos w@ is @Just@ the position of the cursor in @window w@
--- or @Nothing@ when the cursor is not in the window.
-cursorPos :: WindowE t -> Behavior t (Maybe (Double, Double))
-cursorPos = stepper Nothing . cursorMove'
+{- TODO
+-- | @position w@ is @Just@ the position of @window w@ or @Nothing@ if the
+-- window is iconified.
+position :: WindowE t -> Behavior t (Maybe (Double, Double))
+position = undefined
+-}
+
