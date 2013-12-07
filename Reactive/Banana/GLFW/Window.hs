@@ -26,10 +26,8 @@ module Reactive.Banana.GLFW.Window
     size,
     resize,
 
-    -- * Buttons
+    -- * Character Input
     char,
-    keyChange,
-    mouseChange,
 ) where
 
 import Reactive.Banana

@@ -26,8 +26,8 @@ data WindowHandler = WindowHandler
     , move        :: AddHandler' (Int, Int)
     , resize      :: AddHandler' (Int, Int)
     , char        :: AddHandler' Char
-    , keyChange   :: AddHandler' KeyPress
-    , mouseChange :: AddHandler' MouseClick
+    , keyEvent    :: AddHandler' KeyEvent
+    , mouseEvent  :: AddHandler' MouseEvent
     , cursorMove  :: AddHandler' (Double, Double)
     , cursorEnter :: AddHandler' Bool
     }
@@ -57,9 +57,9 @@ windowHandler w = WindowHandler w
     <*> hc3 (GLFW.setWindowPosCallback w)
     <*> hc3 (GLFW.setWindowSizeCallback w)
     <*> hc2 (GLFW.setCharCallback w)
-    <*> handleCallback (\f _ k i s m -> f $ KeyPress k (SC i) s (listModKeys m))
+    <*> handleCallback (\f _ k i s m -> f $ ButtonEvent (k, SC i) s (listModKeys m))
             (GLFW.setKeyCallback w)
-    <*> handleCallback (\f _ mb s m -> f $ MouseClick mb s (listModKeys m))
+    <*> handleCallback (\f _ mb s m -> f $ ButtonEvent mb s (listModKeys m))
             (GLFW.setMouseButtonCallback w)
     <*> hc3 (GLFW.setCursorPosCallback w)
     <*> (fmap (== CursorState'InWindow)

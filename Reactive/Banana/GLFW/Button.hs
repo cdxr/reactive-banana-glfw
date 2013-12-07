@@ -1,91 +1,95 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Reactive.Banana.GLFW.Button
 (
-    -- * Button
-    Button(..),
-    -- ** Press
+    -- * Input Sources
+    keyEvent,
+    mouseEvent,
+    InputEvent(..),
+
+    -- ** State Predicates
+    ButtonState(..),
     Press(..),
-    PressEvent(..),
     press,
     release,
     hold,
-    -- ** ModKey
-    ModEvent(..),
     mods,
+    Match(..),
+    button,
 )
 where
 
 import Data.Maybe ( isNothing )
 
 import Reactive.Banana
-import Graphics.UI.GLFW
 
-import Reactive.Banana.GLFW.Window
+import Reactive.Banana.GLFW.Types
+import Reactive.Banana.GLFW.Internal.WindowE
+
+
+class InputEvent e where
+    inputEvent :: WindowE t -> Event t e
+
+instance InputEvent KeyEvent where
+    inputEvent = keyEvent
+
+instance InputEvent MouseEvent where
+    inputEvent = mouseEvent
 
 
 data Press = Release | Press
     deriving (Show, Eq, Ord, Bounded, Enum)
 
-
--- | Class of types that represent the pressing or releasing of a `Button`.
-class PressEvent b where
+-- | Class of types that might represent the pressing or releasing of a `Button`.
+class ButtonState b where
     getPress :: b -> Maybe Press
 
-press :: (PressEvent a) => a -> Bool
+press :: (ButtonState a) => a -> Bool
 press = (== Just Press) . getPress
 
-release :: (PressEvent a) => a -> Bool
+release :: (ButtonState a) => a -> Bool
 release = (== Just Release) . getPress
 
-hold :: KeyPress -> Bool
+hold :: KeyState -> Bool
 hold = isNothing . getPress
 
 
-instance PressEvent KeyPress where
-    getPress (KeyPress _ _ s _) = case s of
+instance ButtonState KeyState where
+    getPress s = case s of
         KeyState'Pressed   -> Just Press
         KeyState'Released  -> Just Release
         KeyState'Repeating -> Nothing
 
-instance PressEvent MouseClick where
-    getPress (MouseClick _ s _) = Just $ case s of
+instance ButtonState MouseButtonState where
+    getPress s = Just $ case s of
         MouseButtonState'Pressed  -> Press
         MouseButtonState'Released -> Release
 
 
-
-class ModEvent a where
-    modkey :: ModKey -> a -> Bool
-
-instance ModEvent KeyPress where
-    modkey m (KeyPress _ _ _ ms) = m `elem` ms
-
-instance ModEvent MouseClick where
-    modkey m (MouseClick _ _ ms) = m `elem` ms
-
 -- | @mods ms a@ is True iff for all @m@ in @ms@, @modkey m a@.
 --
 -- @mods [] a@ is True only when @a@ includes no ModKeys.
-mods :: (ModEvent a) => [ModKey] -> a -> Bool
-mods ms a = all (\m -> modkey m a == elem m ms) [Shift .. Super]
+mods :: [ModKey] -> ButtonEvent b s -> Bool
+mods ms be = all (\m -> elem m bms == elem m ms) enumerateModKeys
+  where
+    bms = modifiers be
 
-    
-class (PressEvent e, ModEvent e) => Button b e | b -> e where
-    button :: WindowE t -> b -> Event t e
 
-instance Button Key KeyPress where
-    button w k = filterE matchKey $ keyChange w
-      where
-        matchKey (KeyPress k' _ _ _) = k == k'
+class Match m e | m -> e where
+    match :: m -> e -> Bool
 
-instance Button ScanCode KeyPress where
-    button w sc = filterE matchKey $ keyChange w
-      where
-        matchKey (KeyPress _ sc' _ _) = sc == sc'
+instance Match Key KeyEvent where
+    match k = (==) k . key
 
-instance Button MouseButton MouseClick where
-    button w mb = filterE matchButton $ mouseChange w
-      where
-        matchButton (MouseClick mb' _ _) = mb == mb'
+instance Match ScanCode KeyEvent where
+    match sc = (==) sc . scancode
+
+instance Match MouseButton MouseEvent where
+    match mb = (==) mb . mouseButton
+
+
+button :: (InputEvent e, Match m e) => WindowE t -> m -> Event t e
+button w m = filterE (match m) (inputEvent w)
