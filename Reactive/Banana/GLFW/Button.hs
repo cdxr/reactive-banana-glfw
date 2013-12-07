@@ -15,7 +15,7 @@ module Reactive.Banana.GLFW.Button
     Press(..),
     press,
     release,
-    hold,
+    repeating,
     mods,
     Match(..),
     button,
@@ -47,14 +47,16 @@ data Press = Release | Press
 class ButtonState b where
     getPress :: b -> Maybe Press
 
-press :: (ButtonState a) => a -> Bool
-press = (== Just Press) . getPress
+press :: (ButtonState s) => ButtonEvent b s -> Bool
+press = (== Just Press) . getPress . buttonState
 
-release :: (ButtonState a) => a -> Bool
-release = (== Just Release) . getPress
+release :: (ButtonState s) => ButtonEvent b s -> Bool
+release = (== Just Release) . getPress . buttonState
 
-hold :: KeyState -> Bool
-hold = isNothing . getPress
+repeating :: ButtonEvent b KeyState -> Bool
+repeating be = case buttonState be of
+    KeyState'Repeating -> True
+    _                  -> False
 
 
 instance ButtonState KeyState where
