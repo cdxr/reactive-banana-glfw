@@ -41,7 +41,7 @@ data ButtonEvent b s = ButtonEvent
 
 -- | A modifier key. A list of modifier keys is reported for every key press
 -- and mouse click.
-data ModKey = Shift | Ctl | Alt | Super
+data ModKey = Shift | Ctrl | Alt | Super
     deriving (Show, Read, Ord, Eq, Bounded, Enum)
 
 -- | A list of all modifier keys

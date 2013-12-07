@@ -74,7 +74,7 @@ windowHandler w = WindowHandler w
 listModKeys :: ModifierKeys -> [ModKey]
 listModKeys (ModifierKeys sh c a s) = map snd $ filter fst
     [ (sh, Shift)
-    , (c,  Ctl)
+    , (c,  Ctrl)
     , (a,  Alt)
     , (s,  Super)
     ]
