@@ -4,4 +4,4 @@
 `reactive-banana` FRP library. It is designed to be useful in combination with
 `GLFW-b` or as an independent API.
 
-More details will follow soon.
+This library is in early development and is not yet safe to use.
