@@ -8,36 +8,54 @@ module Reactive.Banana.GLFW.Button
     -- * Input Sources
     keyEvent,
     mouseEvent,
-    InputEvent(..),
 
-    -- ** State Predicates
+    -- ** Predicates
+    match,
+    matchCode,
+
     ButtonState(..),
     Press(..),
     press,
     release,
     repeating,
     mods,
-    Match(..),
-    button,
 )
 where
 
-import Data.Maybe ( isNothing )
-
 import Reactive.Banana
+import Reactive.Banana.Frameworks
 
 import Reactive.Banana.GLFW.Types
-import Reactive.Banana.GLFW.Internal.WindowE
+
+import qualified Reactive.Banana.GLFW.WindowHandler as WH
 
 
-class InputEvent e where
-    inputEvent :: WindowE t -> Event t e
+-- * Events
 
-instance InputEvent KeyEvent where
-    inputEvent = keyEvent
+keyEvent :: (Frameworks t) => WH.WindowHandler -> Moment t (Event t KeyEvent)
+keyEvent = WH.fromAddHandler' . WH.keyEvent
 
-instance InputEvent MouseEvent where
-    inputEvent = mouseEvent
+mouseEvent :: (Frameworks t) => WH.WindowHandler -> Moment t (Event t MouseEvent)
+mouseEvent = WH.fromAddHandler' . WH.mouseEvent
+
+
+-- * Filters
+
+
+match :: Key -> KeyEvent -> Bool
+match k = (== k) . key
+
+matchCode :: Int -> KeyEvent -> Bool
+matchCode sc = (== SC sc) . scancode
+
+
+-- | @mods ms a@ is True iff for all @m@ in @ms@, @modkey m a@.
+--
+-- @mods [] a@ is True only when @a@ includes no ModKeys.
+mods :: [ModKey] -> ButtonEvent b s -> Bool
+mods ms be = all (\m -> elem m bms == elem m ms) enumerateModKeys
+  where
+    bms = modifiers be
 
 
 data Press = Release | Press
@@ -69,29 +87,3 @@ instance ButtonState MouseButtonState where
     getPress s = Just $ case s of
         MouseButtonState'Pressed  -> Press
         MouseButtonState'Released -> Release
-
-
--- | @mods ms a@ is True iff for all @m@ in @ms@, @modkey m a@.
---
--- @mods [] a@ is True only when @a@ includes no ModKeys.
-mods :: [ModKey] -> ButtonEvent b s -> Bool
-mods ms be = all (\m -> elem m bms == elem m ms) enumerateModKeys
-  where
-    bms = modifiers be
-
-
-class Match m e | m -> e where
-    match :: m -> e -> Bool
-
-instance Match Key KeyEvent where
-    match k = (==) k . key
-
-instance Match ScanCode KeyEvent where
-    match sc = (==) sc . scancode
-
-instance Match MouseButton MouseEvent where
-    match mb = (==) mb . mouseButton
-
-
-button :: (InputEvent e, Match m e) => WindowE t -> m -> Event t e
-button w m = filterE (match m) (inputEvent w)
