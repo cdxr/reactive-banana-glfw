@@ -1,7 +1,5 @@
--- | This module provides Events and Behaviors for mouse movement.
---
--- Every position emitted by Events and Behaviors in this module are subject
--- to the `CursorOrigin` defined on the given `WindowE`.
+-- | This module provides `Cursor t`, a source of Events and Behaviors related
+-- to mouse input.
 --
 module Reactive.Banana.GLFW.Mouse
 (
@@ -48,10 +46,10 @@ data CursorOrigin
     | BottomLeft    -- ^ (0,0) is at the bottom-left corner
     deriving (Show, Read, Eq, Ord)
 
-data Cursor t = Cursor
+data Cursor t = Cursor {
     -- | @cursorMove c@ emits the position of the cursor @c@ whenever it
     -- changes.
-    { cursorMove  :: Event t (Double, Double)
+      cursorMove  :: Event t (Double, Double)
 
     -- | @cursorPos c@ is the position of the cursor @c@. When the mouse
     -- leaves the window, the cursor position is equal to the most recent

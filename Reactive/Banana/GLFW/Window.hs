@@ -27,8 +27,7 @@ import Reactive.Banana
 import Reactive.Banana.Frameworks
 
 import Reactive.Banana.GLFW.Types
---import Reactive.Banana.GLFW.Internal.Utils
---import Reactive.Banana.GLFW.Internal.WindowE
+import Reactive.Banana.GLFW.Internal.Utils
 
 import Reactive.Banana.GLFW.AddHandler
 import Reactive.Banana.GLFW.WindowHandler ( WindowHandler )
@@ -91,14 +90,14 @@ size w = stepper <$> liftIO (GLFW.getWindowSize (WH.window w)) <*> resize w
 
 -- | @move' w@ creates an event that emits @Just@ the window position whenever
 -- @window w@ moves, and emits @Nothing@ when the window is iconified.
---move' :: (Frameworks t) => WindowHandler -> Moment t (Event t (Maybe (Int, Int)))
---move' w = spigot <$> (not <$> iconify w) <*> move w
+move' :: (Frameworks t) => WindowHandler -> Moment t (Event t (Maybe (Int, Int)))
+move' w = spigot <$> (fmap not <$> iconify w) <*> move w
 
 
 {- TODO
--- | @position w@ is @Just@ the position of @window w@ or @Nothing@ if the
--- window is iconified.
-position :: WindowE t -> Behavior t (Maybe (Double, Double))
+
+-- | @position w@ is @Just@ the window position or @Nothing@ if the window
+-- is iconified.
+position :: WindowHandler -> Behavior t (Maybe (Double, Double))
 position = undefined
 -}
-
