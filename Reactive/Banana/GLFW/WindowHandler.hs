@@ -1,3 +1,12 @@
+-- | This module defines `WindowHandler`, a source of GLFW Events that are
+-- received through a particular `GLFW.Window`. It is not necessary to
+-- import this module unless you need to register callbacks outside of
+-- reactive-banana.
+--
+-- This module should usually be imported qualified because it exports
+-- names that conflict with the rest of the library.
+
+
 module Reactive.Banana.GLFW.WindowHandler
 (
     module Reactive.Banana.GLFW.Types,

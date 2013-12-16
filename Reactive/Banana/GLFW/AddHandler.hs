@@ -23,3 +23,6 @@ instance Monoid (AddHandler' a) where
 
 fromAddHandler' :: Frameworks t => AddHandler' a -> Moment t (Event t a)
 fromAddHandler' = fromAddHandler . registerCallback
+
+fromChanges' :: Frameworks t => a -> AddHandler' a -> Moment t (Behavior t a)
+fromChanges' a = fromChanges a . registerCallback
