@@ -44,16 +44,9 @@ data WindowHandler = WindowHandler
 
 -- | Obtain a `WindowHandler` for a `GLFW.Window`.
 --
--- You only need a `WindowHandler` if you need to register callbacks outside
--- of reactive-banana.
---
--- Use `registerCallback` on the components of the `WindowHandler` for
--- traditional `IO` callbacks. Then use `eventsFromHandlers` to obtain a
--- `WindowEvents` to use reactive-banana as well.
---
--- Note that this will register every callback associated with this Window.
--- If a callback is registered directly with GLFW instead of this
--- `WindowHandler`, it will stop working for this `WindowHandler`.
+-- This will register every GLFW callback for this window. When you create
+-- a WindowHandler for a Window, you invalidate every WindowHandler that
+-- was previously created for that Window.
 --
 windowHandler :: GLFW.Window -> IO WindowHandler
 windowHandler w = WindowHandler w
