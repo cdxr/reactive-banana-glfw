@@ -49,8 +49,17 @@ data CursorOrigin
     deriving (Show, Read, Eq, Ord)
 
 data Cursor t = Cursor
+    -- | @cursorMove c@ emits the position of the cursor @c@ whenever it
+    -- changes.
     { cursorMove  :: Event t (Double, Double)
+
+    -- | @cursorPos c@ is the position of the cursor @c@. When the mouse
+    -- leaves the window, the cursor position is equal to the most recent
+    -- position of the mouse in the window.
     , cursorPos   :: Behavior t (Double, Double)
+
+    -- | @cursorEnter c@ emits an event when the cursor enters the window
+    -- (@True@) and when it exits the window (@False@).
     , cursorEnter :: Event t Bool
     }
 

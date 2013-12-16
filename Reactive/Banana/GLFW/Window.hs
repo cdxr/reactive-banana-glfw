@@ -42,7 +42,7 @@ refresh :: (Frameworks t) => WindowHandler -> Moment t (Event t ())
 refresh = fromAddHandler' . WH.refresh
 
 
--- | @close w@ creates and event that is triggered when the user attempts to
+-- | @close w@ creates an event that is triggered when the user attempts to
 -- close @window w@, for example by clicking the close widget in the title bar.
 --
 -- When this is triggered, the close flag has been set and the `GLFW.Window`
