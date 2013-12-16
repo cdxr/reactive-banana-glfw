@@ -10,9 +10,12 @@ module Reactive.Banana.GLFW.Mouse
     -- | The value of the /cursor/ is a @(Double, Double)@ that represents the
     -- last position of the mouse within the window.
     -- 
+    Cursor,
+    cursor,   
+
     cursorPos,
     cursorMove,
-    I.cursorEnter,
+    cursorEnter,
 
     -- * Mouse
     -- | The value of the /mouse/ is a @Maybe (Double, Double)@ that is @Just@
@@ -22,41 +25,67 @@ module Reactive.Banana.GLFW.Mouse
     mouseMove,
 
     -- * Origin
-    I.CursorOrigin(..),
-    I.cursorOrigin,
-    I.setCursorOrigin,
+    CursorOrigin(..),
 ) where
 
+
+import qualified Graphics.UI.GLFW as GLFW
+
 import Reactive.Banana
-import Reactive.Banana.GLFW.Internal.Utils
-import Reactive.Banana.GLFW.Internal.WindowE as I
+import Reactive.Banana.Frameworks
+
+import Reactive.Banana.GLFW.Window ( size )
+
+import Reactive.Banana.GLFW.AddHandler
+import qualified Reactive.Banana.GLFW.WindowHandler as WH
 
 
--- | @cursorPos w@ is the cursor position of @window w@.
-cursorPos :: WindowE t -> Behavior t (Double, Double)
-cursorPos = stepper (0,0) . cursorMove
+-- | The origin of the screen coordinates, used for reporting cursor movements.
+-- The default is @TopLeft@.
+--
+data CursorOrigin
+    = TopLeft       -- ^ (0,0) is at the top-left corner (typical GLFW)
+    | BottomLeft    -- ^ (0,0) is at the bottom-left corner
+    deriving (Show, Read, Eq, Ord)
 
+data Cursor t = Cursor
+    { cursorMove  :: Event t (Double, Double)
+    , cursorPos   :: Behavior t (Double, Double)
+    , cursorEnter :: Event t Bool
+    }
 
--- | @cursorMove w@ emits the cursor position every time it moves within
--- @window w@.
-cursorMove :: WindowE t -> Event t (Double, Double)
-cursorMove w = case cursorOrigin w of
-    TopLeft    -> _cursorMove w
-    BottomLeft -> flipY <$> size w <@> _cursorMove w
+cursor :: (Frameworks t) => WH.WindowHandler -> CursorOrigin -> Moment t (Cursor t)
+cursor w co = do
+    initWindowSize <- liftIO $ GLFW.getWindowSize (WH.window w)
+    initPos <- liftIO $ adjust initWindowSize <$> GLFW.getCursorPos (WH.window w)
+    enter <- fromAddHandler' $ WH.cursorEnter w
+
+    bSize <- size w
+    rawCursorMove <- fromAddHandler' (WH.cursorMove w)
+    let move = adjust <$> bSize <@> rawCursorMove
+
+    return Cursor { cursorMove = move
+                  , cursorPos  = stepper initPos move
+                  , cursorEnter = enter
+                  }
   where
-    flipY :: (Int, Int) -> (Double, Double) -> (Double, Double)
-    flipY (_, height) (x, y) = (x, fromIntegral height - y)
+    adjust :: (Int, Int) -> (Double, Double) -> (Double, Double)
+    adjust = case co of
+        TopLeft    -> const id
+        BottomLeft -> \(_width, height) (x, y) -> (x, fromIntegral height - y)
 
 
--- | @mouseMove w@ emits @Just@ the mouse position whenever the mouse moves
--- inside @window w@, and emits @Nothing@ when the mouse exits the window.
+-- | @mouseMove c@ emits @Just p@ whenever @cursorMove c@ emits @p@, and emits
+-- @Nothing@ whenever the cursor leaves the window.
 --
 -- This is a combination of `cursorMove` and `cursorEnter`.
-mouseMove :: WindowE t -> Event t (Maybe (Double, Double))
-mouseMove w = spigot (cursorEnter w) (cursorMove w)
+mouseMove :: Cursor t -> Event t (Maybe (Double, Double))
+mouseMove c = (Nothing <$ filterE not (cursorEnter c))
+      `union` (Just <$> cursorMove c)
+--mouseMove w = spigot (cursorEnter w) (cursorMove w)
 
 
--- | @mousePos w@ is @Just@ the position of the mouse in @window w@
--- or @Nothing@ when the mouse is not in the window.
-mousePos :: WindowE t -> Behavior t (Maybe (Double, Double))
+-- | @mousePos c@ is @Just@ the value of @cursorPos c@ or @Nothing@ when the
+-- mouse has left the window.
+mousePos :: Cursor t -> Behavior t (Maybe (Double, Double))
 mousePos = stepper Nothing . mouseMove
