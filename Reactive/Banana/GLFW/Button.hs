@@ -8,6 +8,7 @@ module Reactive.Banana.GLFW.Button
     -- * Input Sources
     keyEvent,
     mouseEvent,
+    charEvent,
 
     -- ** Predicates
     match,
@@ -32,11 +33,28 @@ import qualified Reactive.Banana.GLFW.WindowHandler as WH
 
 -- * Events
 
+-- | @keyEvent w@ creates an event that emits a `KeyEvent` for every state
+-- change of every key while the window has focus.
+--
 keyEvent :: (Frameworks t) => WH.WindowHandler -> Moment t (Event t KeyEvent)
 keyEvent = WH.fromAddHandler' . WH.keyEvent
 
+
+-- | @mouseEvent w@ creates an event that emits a `MouseEvent` for every state
+-- change of every mouse button while the window has focus.
+--
 mouseEvent :: (Frameworks t) => WH.WindowHandler -> Moment t (Event t MouseEvent)
 mouseEvent = WH.fromAddHandler' . WH.mouseEvent
+
+
+-- | @char w@ creates an event that emits each Unicode character that is
+-- entered into the window.
+--
+-- This should only be used for text input. To respond to the state changes of
+-- a specific key, use `keyEvent`.
+--
+charEvent :: (Frameworks t) => WH.WindowHandler -> Moment t (Event t Char)
+charEvent = WH.fromAddHandler' . WH.char
 
 
 -- * Filters
