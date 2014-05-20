@@ -10,7 +10,6 @@
 module Reactive.Banana.GLFW.WindowHandler
 (
     module Reactive.Banana.GLFW.Types,
-    module Reactive.Banana.GLFW.AddHandler,
 
     -- * WindowHandlers
     WindowHandler(..),
@@ -23,22 +22,22 @@ import Reactive.Banana hiding ( Identity )
 import Reactive.Banana.Frameworks
 
 import Reactive.Banana.GLFW.Types
-import Reactive.Banana.GLFW.AddHandler
+import Control.Event.Handler
 
 
 data WindowHandler = WindowHandler
     { window      :: GLFW.Window
-    , refresh     :: AddHandler' ()
-    , close       :: AddHandler' ()
-    , focus       :: AddHandler' Bool
-    , iconify     :: AddHandler' Bool
-    , move        :: AddHandler' (Int, Int)
-    , resize      :: AddHandler' (Int, Int)
-    , char        :: AddHandler' Char
-    , keyEvent    :: AddHandler' KeyEvent
-    , mouseEvent  :: AddHandler' MouseEvent
-    , cursorMove  :: AddHandler' (Double, Double)
-    , cursorEnter :: AddHandler' Bool
+    , refresh     :: AddHandler ()
+    , close       :: AddHandler ()
+    , focus       :: AddHandler Bool
+    , iconify     :: AddHandler Bool
+    , move        :: AddHandler (Int, Int)
+    , resize      :: AddHandler (Int, Int)
+    , char        :: AddHandler Char
+    , keyEvent    :: AddHandler KeyEvent
+    , mouseEvent  :: AddHandler MouseEvent
+    , cursorMove  :: AddHandler (Double, Double)
+    , cursorEnter :: AddHandler Bool
     }
 
 
@@ -85,8 +84,8 @@ listModKeys (ModifierKeys sh c a s) = map snd $ filter fst
 handleCallback
     :: ((a -> IO ()) -> cb)
     -> (Maybe cb -> IO ())
-    -> IO (AddHandler' a)
+    -> IO (AddHandler a)
 handleCallback f cb = do
     (ah, fire) <- newAddHandler
     liftIO $ cb $ Just $ f fire
-    return $ AddHandler' ah
+    return ah

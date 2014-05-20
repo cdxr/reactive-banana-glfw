@@ -16,30 +16,17 @@ import Reactive.Banana.GLFW
 
 main :: IO ()
 main = withWindow $ \window -> do
+    h <- windowHandler window
     network <- compile $ do
-        w <- windowEvents window
-        reactimate $ exitSuccess <$ filterE press (button w Key'Escape)
-        reactimate $ putStrLn <$> showEvents w
+        keyE <- keyEvent h
+        reactimate $ exitSuccess <$ filterE (match Key'Escape) keyE
+        reactimate $ print <$> keyE
+
+        c <- cursor h TopLeft
+        reactimate $ putStrLn . ("Cursor: " ++) . show <$> cursorMove c
+
     actuate network
     forever GLFW.pollEvents
-
-
-showEvents :: WindowE t -> Event t String
-showEvents w = unions
-    [ "window refreshed"       <$  refresh w
-    , "window closed"          <$  close w
-    , label "window focused"   <$> focus w
-    , label "window iconified" <$> iconify w
-    , label "window pos"       <$> move w
-    , label "window size"      <$> resize w
-    , show <$> char w
-    , show <$> keyChange w
-    , show <$> mouseChange w
-    , show <$> cursorMove w
-    , show <$> cursorEnter w
-    ]
-  where
-    label s a = s ++ ": " ++ show a
 
 
 withWindow :: (GLFW.Window -> IO ()) -> IO ()

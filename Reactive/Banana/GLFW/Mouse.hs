@@ -34,7 +34,7 @@ import Reactive.Banana.Frameworks
 
 import Reactive.Banana.GLFW.Window ( size )
 
-import Reactive.Banana.GLFW.AddHandler
+import Control.Event.Handler
 import qualified Reactive.Banana.GLFW.WindowHandler as WH
 
 
@@ -65,10 +65,10 @@ cursor :: (Frameworks t) => WH.WindowHandler -> CursorOrigin -> Moment t (Cursor
 cursor w co = do
     initWindowSize <- liftIO $ GLFW.getWindowSize (WH.window w)
     initPos <- liftIO $ adjust initWindowSize <$> GLFW.getCursorPos (WH.window w)
-    enter <- fromAddHandler' $ WH.cursorEnter w
+    enter <- fromAddHandler $ WH.cursorEnter w
 
     bSize <- size w
-    rawCursorMove <- fromAddHandler' (WH.cursorMove w)
+    rawCursorMove <- fromAddHandler (WH.cursorMove w)
     let move = adjust <$> bSize <@> rawCursorMove
 
     return Cursor { cursorMove = move

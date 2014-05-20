@@ -20,7 +20,6 @@ library
     Reactive.Banana.GLFW.Button
     Reactive.Banana.GLFW.Utils
     Reactive.Banana.GLFW.WindowHandler
-    Reactive.Banana.GLFW.AddHandler
     Reactive.Banana.GLFW.Internal.Utils
   build-depends:
     base            == 4.7.*,
