@@ -1,6 +1,3 @@
-ERROR
-
-
 --
 -- | This is an /internal module/ that defines the `WindowE` type.
 --
