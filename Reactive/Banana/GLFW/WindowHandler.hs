@@ -38,6 +38,7 @@ data WindowHandler = WindowHandler
     , mouseEvent  :: AddHandler MouseEvent
     , cursorMove  :: AddHandler (Double, Double)
     , cursorEnter :: AddHandler Bool
+    , scroll      :: AddHandler (Double, Double)
     }
 
 
@@ -65,6 +66,7 @@ windowHandler w = WindowHandler w
     <*> hc3 (GLFW.setCursorPosCallback w)
     <*> (fmap (== CursorState'InWindow)
         <$> hc2 (GLFW.setCursorEnterCallback w))
+    <*> hc3 (GLFW.setScrollCallback w)
   where
     hc1 = handleCallback $ \fire _ -> fire ()
     hc2 = handleCallback $ \fire _ a -> fire a

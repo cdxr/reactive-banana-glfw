@@ -18,6 +18,9 @@ module Reactive.Banana.GLFW.Window
     -- * Size
     size,
     resize,
+
+    -- * Scroll
+    scroll
 ) where
 
 
@@ -92,6 +95,11 @@ size w = stepper <$> liftIO (GLFW.getWindowSize (WH.window w)) <*> resize w
 move' :: (Frameworks t) => WindowHandler -> Moment t (Event t (Maybe (Int, Int)))
 move' w = spigot <$> (fmap not <$> iconify w) <*> move w
 
+
+-- | @scroll w@ creates an event that emits the scroll offset along 'x' and 'y' axises whenever
+-- scrolling device is used, such as a mouse wheel or scrolling area of a touchpad.
+scroll :: (Frameworks t) => WindowHandler -> Moment t (Event t (Double, Double))
+scroll = fromAddHandler . WH.scroll
 
 {- TODO
 
