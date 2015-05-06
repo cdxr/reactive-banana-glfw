@@ -22,7 +22,7 @@ library
     Reactive.Banana.GLFW.WindowHandler
     Reactive.Banana.GLFW.Internal.Utils
   build-depends:
-    base            >= 4.6 && < 4.8,
+    base            >= 4.6 && < 5,
     GLFW-b          == 1.4.*,
     reactive-banana == 0.8.*,
-    transformers    == 0.3.*
+    transformers    == 0.4.*
