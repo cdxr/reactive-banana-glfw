@@ -18,11 +18,9 @@ module Reactive.Banana.GLFW.WindowHandler
 where
 
 import Graphics.UI.GLFW as GLFW
-import Reactive.Banana hiding ( Identity )
 import Reactive.Banana.Frameworks
 
 import Reactive.Banana.GLFW.Types
-import Control.Event.Handler
 
 
 data WindowHandler = WindowHandler
