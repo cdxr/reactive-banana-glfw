@@ -20,6 +20,7 @@ module Reactive.Banana.GLFW.Window
     -- * Size
     size,
     resize,
+    frameBufferSize,
 
     -- * Scroll
     scroll
@@ -104,6 +105,12 @@ resize = fromAddHandler . WH.resize
 size :: WindowHandler -> MomentIO (Behavior (Int, Int))
 size w = do
     isize <- liftIO (GLFW.getWindowSize $ WH.window w)
+    resize w >>= stepper isize
+
+-- | @size w@ creates a behavior that is the size of frame buffer of @window w@.
+frameBufferSize :: WindowHandler -> MomentIO (Behavior (Int, Int))
+frameBufferSize w = do
+    isize <- liftIO (GLFW.getFramebufferSize $ WH.window w)
     resize w >>= stepper isize
 
 
