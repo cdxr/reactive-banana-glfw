@@ -46,22 +46,22 @@ data CursorOrigin
     | BottomLeft    -- ^ (0,0) is at the bottom-left corner
     deriving (Show, Read, Eq, Ord)
 
-data Cursor t = Cursor {
+data Cursor = Cursor {
     -- | @cursorMove c@ emits the position of the cursor @c@ whenever it
     -- changes.
-      cursorMove  :: Event t (Double, Double)
+      cursorMove  :: Event (Double, Double)
 
     -- | @cursorPos c@ is the position of the cursor @c@. When the mouse
     -- leaves the window, the cursor position is equal to the most recent
     -- position of the mouse in the window.
-    , cursorPos   :: Behavior t (Double, Double)
+    , cursorPos   :: Behavior (Double, Double)
 
     -- | @cursorEnter c@ emits an event when the cursor enters the window
     -- (@True@) and when it exits the window (@False@).
-    , cursorEnter :: Event t Bool
+    , cursorEnter :: Event Bool
     }
 
-cursor :: (Frameworks t) => WH.WindowHandler -> CursorOrigin -> Moment t (Cursor t)
+cursor :: WH.WindowHandler -> CursorOrigin -> MomentIO Cursor
 cursor w co = do
     initWindowSize <- liftIO $ GLFW.getWindowSize (WH.window w)
     initPos <- liftIO $ adjust initWindowSize <$> GLFW.getCursorPos (WH.window w)
@@ -71,8 +71,10 @@ cursor w co = do
     rawCursorMove <- fromAddHandler (WH.cursorMove w)
     let move = adjust <$> bSize <@> rawCursorMove
 
+    cursPos <- stepper initPos move
+
     return Cursor { cursorMove = move
-                  , cursorPos  = stepper initPos move
+                  , cursorPos  = cursPos
                   , cursorEnter = enter
                   }
   where
@@ -86,13 +88,16 @@ cursor w co = do
 -- @Nothing@ whenever the cursor leaves the window.
 --
 -- This is a combination of `cursorMove` and `cursorEnter`.
-mouseMove :: Cursor t -> Event t (Maybe (Double, Double))
-mouseMove c = (Nothing <$ filterE not (cursorEnter c))
-      `union` (Just <$> cursorMove c)
+mouseMove :: Cursor -> Event (Maybe (Double, Double))
+mouseMove c = 
+    unionWith
+        (\e m -> m)
+        (Nothing <$ filterE not (cursorEnter c))
+        (Just <$> cursorMove c)
 --mouseMove w = spigot (cursorEnter w) (cursorMove w)
 
 
 -- | @mousePos c@ is @Just@ the value of @cursorPos c@ or @Nothing@ when the
 -- mouse has left the window.
-mousePos :: Cursor t -> Behavior t (Maybe (Double, Double))
-mousePos = stepper Nothing . mouseMove
+mousePos :: (MonadMoment m) => Cursor -> m (Behavior (Maybe (Double, Double)))
+mousePos c = stepper Nothing (mouseMove c)
