@@ -25,4 +25,4 @@ library
     base            >= 4.6 && < 5,
     GLFW-b          == 1.4.*,
     reactive-banana >= 1.1,
-    transformers    == 0.4.*
+    transformers    == 0.5.*
