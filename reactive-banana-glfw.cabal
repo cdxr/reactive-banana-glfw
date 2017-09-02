@@ -1,5 +1,5 @@
 name:                reactive-banana-glfw
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            reactive-banana for GLFW
 -- description:         
 license:             BSD3
@@ -24,5 +24,5 @@ library
   build-depends:
     base            >= 4.6 && < 5,
     GLFW-b          == 1.4.*,
-    reactive-banana == 0.8.*,
-    transformers    == 0.4.*
+    reactive-banana >= 1.1,
+    transformers    == 0.5.*
