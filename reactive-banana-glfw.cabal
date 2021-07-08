@@ -1,7 +1,7 @@
 name:                reactive-banana-glfw
-version:             0.2.0.0
+version:             0.2.0.1
 synopsis:            reactive-banana for GLFW
--- description:         
+-- description:
 license:             BSD3
 license-file:        LICENSE
 author:              Craig Roche
@@ -22,7 +22,27 @@ library
     Reactive.Banana.GLFW.WindowHandler
     Reactive.Banana.GLFW.Internal.Utils
   build-depends:
-    base            >= 4.6 && < 5,
+    base            >= 4.8 && < 5,
     GLFW-b          == 1.4.*,
-    reactive-banana == 0.8.*,
+    reactive-banana == 1.0.*,
     transformers    == 0.4.*
+  ghc-options: -Wall
+
+executable PrintEvents
+  main-is: PrintEvents.hs
+  build-depends:
+    base            >= 4.8 && < 5,
+    GLFW-b          == 1.4.*,
+    reactive-banana == 1.0.*,
+    transformers    == 0.4.*
+  hs-source-dirs: examples .
+  other-modules:
+    Reactive.Banana.GLFW
+    Reactive.Banana.GLFW.Types
+    Reactive.Banana.GLFW.Window
+    Reactive.Banana.GLFW.Mouse
+    Reactive.Banana.GLFW.Button
+    Reactive.Banana.GLFW.Utils
+    Reactive.Banana.GLFW.WindowHandler
+    Reactive.Banana.GLFW.Internal.Utils
+  ghc-options: -Wall

@@ -1,6 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 
-import Control.Applicative
+--import Control.Applicative
 import Control.Monad
 
 import System.Exit       ( exitSuccess )
@@ -18,12 +18,16 @@ main :: IO ()
 main = withWindow $ \window -> do
     h <- windowHandler window
     network <- compile $ do
+        closeE <- close h
+        reactimate $ exitSuccess <$ closeE
         keyE <- keyEvent h
-        reactimate $ exitSuccess <$ filterE (match Key'Escape) keyE
+        reactimate $ (GLFW.setWindowShouldClose window True >> exitSuccess) <$ filterE (match Key'Escape) keyE
         reactimate $ print <$> keyE
 
         c <- cursor h TopLeft
-        reactimate $ putStrLn . ("Cursor: " ++) . show <$> cursorMove c
+        reactimate $ putStrLn . ("Cursor: " ++) . show <$> mouseMove c
+        sc <- scroll h
+        reactimate $ putStrLn . ("Scroll: " ++) . show <$> sc
 
     actuate network
     forever GLFW.pollEvents

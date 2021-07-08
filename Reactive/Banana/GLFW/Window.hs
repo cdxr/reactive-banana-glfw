@@ -13,11 +13,14 @@ module Reactive.Banana.GLFW.Window
 
     -- * Position
     position,
+    position',
     move,
+    move',
 
     -- * Size
     size,
     resize,
+    frameBufferSize,
 
     -- * Scroll
     scroll
@@ -36,70 +39,94 @@ import Reactive.Banana.GLFW.WindowHandler ( WindowHandler )
 import qualified Reactive.Banana.GLFW.WindowHandler as WH
 
 
--- | @refresh w@ creates an event that is triggered whenever @window w@ needs
+-- | @refresh w@ creates an Eventhat is triggered whenever @window w@ needs
 -- to be redrawn, for example if the window has been exposed after having been
 -- covered by another window.
-refresh :: (Frameworks t) => WindowHandler -> Moment t (Event t ())
+refresh :: WindowHandler -> MomentIO (Event ())
 refresh = fromAddHandler . WH.refresh
 
 
--- | @close w@ creates an event that is triggered when the user attempts to
+-- | @close w@ creates an Eventhat is triggered when the user attempts to
 -- close @window w@, for example by clicking the close widget in the title bar.
 --
 -- When this is triggered, the close flag has been set and the `GLFW.Window`
 -- will close unless the flag is unset.
-close :: (Frameworks t) => WindowHandler -> Moment t (Event t ())
+close :: WindowHandler -> MomentIO (Event ())
 close = fromAddHandler . WH.close
 
 
--- | @focus w@ creates an event that is triggered when @window w@ gains focus
+-- | @focus w@ creates an Eventhat is triggered when @window w@ gains focus
 -- (@True@) or loses focus (@False@).
 --
 -- When the `GLFW.Window` loses focus, @keyChange w@ and @mouseChange w@
 -- will automatically emit release events for any buttons that were held
 -- down.
-focus :: (Frameworks t) => WindowHandler -> Moment t (Event t Bool)
+focus :: WindowHandler -> MomentIO (Event Bool)
 focus = fromAddHandler . WH.focus
 
 
--- | @iconify w@ creates an event that is triggered when @window w@ is iconified
+-- | @iconify w@ creates an Eventhat is triggered when @window w@ is iconified
 -- (@True@) or restored (@False@).
-iconify :: (Frameworks t) => WindowHandler -> Moment t (Event t Bool)
+iconify :: WindowHandler -> MomentIO (Event Bool)
 iconify = fromAddHandler . WH.iconify
 
 
--- | @move w@ creates an event that emits the position of @window w@ whenever
+-- | @move w@ creates an Event that emits the position of @window w@ whenever
 -- it is moved.
-move :: (Frameworks t) => WindowHandler -> Moment t (Event t (Int, Int))
+move :: WindowHandler -> MomentIO (Event (Int, Int))
 move = fromAddHandler . WH.move
 
 
 -- | @position w@ creates a behavior that is the position of @window w@.
-position :: (Frameworks t) => WindowHandler -> Moment t (Behavior t (Int, Int))
-position w = stepper <$> liftIO (GLFW.getWindowPos (WH.window w)) <*> move w
+position :: WindowHandler -> MomentIO (Behavior (Int, Int))
+position w = do
+    ipos <- liftIO (GLFW.getWindowPos $ WH.window w)
+    move w >>= stepper ipos
 
 
--- | @resize w@ creates an event that emits the size of @window w@ whenever it
+-- | @position w@ is @Just@ the window position or @Nothing@ if the window
+-- is iconified.
+position' :: WindowHandler -> MomentIO (Behavior (Maybe (Int, Int)))
+position' w = do
+    ipos <- liftIO (GLFW.getWindowPos $ WH.window w)
+    ii   <- liftIO ((== GLFW.IconifyState'Iconified) <$> GLFW.getWindowIconified (WH.window w))
+    iconified <- iconify w >>= stepper ii
+    pos  <- move w >>= stepper ipos
+    return $ (\i p -> if i then Nothing else Just p) <$> iconified <*> pos
+
+
+-- | @resize w@ creates an Eventhat emits the size of @window w@ whenever it
 -- is resized.
-resize :: (Frameworks t) => WindowHandler -> Moment t (Event t (Int, Int))
+resize :: WindowHandler -> MomentIO (Event (Int, Int))
 resize = fromAddHandler . WH.resize
 
 
 -- | @size w@ creates a behavior that is the size of @window w@.
-size :: (Frameworks t) => WindowHandler -> Moment t (Behavior t (Int, Int))
-size w = stepper <$> liftIO (GLFW.getWindowSize (WH.window w)) <*> resize w
+size :: WindowHandler -> MomentIO (Behavior (Int, Int))
+size w = do
+    isize <- liftIO (GLFW.getWindowSize $ WH.window w)
+    resize w >>= stepper isize
+
+-- | @size w@ creates a behavior that is the size of frame buffer of @window w@.
+frameBufferSize :: WindowHandler -> MomentIO (Behavior (Int, Int))
+frameBufferSize w = do
+    isize <- liftIO (GLFW.getFramebufferSize $ WH.window w)
+    resize w >>= stepper isize
 
 
--- | @move' w@ creates an event that emits @Just@ the window position whenever
+-- | @move' w@ creates an Eventhat emits @Just@ the window position whenever
 -- @window w@ moves, and emits @Nothing@ when the window is iconified.
-move' :: (Frameworks t) => WindowHandler -> Moment t (Event t (Maybe (Int, Int)))
-move' w = spigot <$> (fmap not <$> iconify w) <*> move w
+move' :: WindowHandler -> MomentIO (Event (Maybe (Int, Int)))
+move' w = do
+    evsb <- fmap not <$> iconify w
+    move w >>= spigot evsb
 
 
--- | @scroll w@ creates an event that emits the scroll offset along 'x' and 'y' axises whenever
+-- | @scroll w@ creates an Eventhat emits the scroll offset along 'x' and 'y' axises whenever
 -- scrolling device is used, such as a mouse wheel or scrolling area of a touchpad.
-scroll :: (Frameworks t) => WindowHandler -> Moment t (Event t (Double, Double))
+scroll :: WindowHandler -> MomentIO (Event (Double, Double))
 scroll = fromAddHandler . WH.scroll
+
 
 {- TODO
 
