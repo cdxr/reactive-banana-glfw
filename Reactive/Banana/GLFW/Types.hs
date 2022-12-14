@@ -41,12 +41,12 @@ data ButtonEvent b s = ButtonEvent
 
 -- | A modifier key. A list of modifier keys is reported for every key press
 -- and mouse click.
-data ModKey = Shift | Ctrl | Alt | Super
+data ModKey = Shift | Ctrl | Alt | Super | CapsLock | NumLock
     deriving (Show, Read, Ord, Eq, Bounded, Enum)
 
 -- | A list of all modifier keys
 enumerateModKeys :: [ModKey]
-enumerateModKeys = [Shift .. Super]
+enumerateModKeys = [minBound .. maxBound]
 
 
 -- | A state-change for a single key.

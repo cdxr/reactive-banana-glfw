@@ -23,6 +23,6 @@ library
     Reactive.Banana.GLFW.Internal.Utils
   build-depends:
     base            >= 4.6 && < 5,
-    GLFW-b          == 1.4.*,
-    reactive-banana >= 1.1,
+    GLFW-b          >= 3.3,
+    reactive-banana >= 1.2.1,
     transformers    == 0.5.*

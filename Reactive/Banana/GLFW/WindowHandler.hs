@@ -52,10 +52,8 @@ windowHandler :: GLFW.Window -> IO WindowHandler
 windowHandler w = WindowHandler w
     <$> hc1 (GLFW.setWindowRefreshCallback w)
     <*> hc1 (GLFW.setWindowCloseCallback w)
-    <*> (fmap (== FocusState'Focused)
-        <$> hc2 (GLFW.setWindowFocusCallback w))
-    <*> (fmap (== IconifyState'Iconified)
-        <$> hc2 (GLFW.setWindowIconifyCallback w))
+    <*> hc2 (GLFW.setWindowFocusCallback w)
+    <*> hc2 (GLFW.setWindowIconifyCallback w)
     <*> hc3 (GLFW.setWindowPosCallback w)
     <*> hc3 (GLFW.setWindowSizeCallback w)
     <*> hc2 (GLFW.setCharCallback w)
@@ -75,11 +73,13 @@ windowHandler w = WindowHandler w
 
 
 listModKeys :: ModifierKeys -> [ModKey]
-listModKeys (ModifierKeys sh c a s) = map snd $ filter fst
-    [ (sh, Shift)
-    , (c,  Ctrl)
-    , (a,  Alt)
-    , (s,  Super)
+listModKeys (ModifierKeys shift ctrl alt super capsLock numLock) = map snd $ filter fst
+    [ (shift    , Shift   )
+    , (ctrl     , Ctrl    )
+    , (alt      , Alt     )
+    , (super    , Super   )
+    , (capsLock , CapsLock)
+    , (numLock  , NumLock )
     ]
 
 -- | Create an `AddHandler'` for a callback in the shape provided by GLFW-b
